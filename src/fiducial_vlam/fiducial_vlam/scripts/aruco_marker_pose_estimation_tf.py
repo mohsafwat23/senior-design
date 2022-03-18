@@ -1,6 +1,10 @@
 #!/usr/bin/env python3
 ...
 # Publishes a coordinate transformation between an ArUco marker and a camera
+"""
+author: Mohamed Safwat
+email: mohamedmohabsafwat@gmail.com
+"""
 # Author:
 # - Addison Sears-Collins
 # - https://automaticaddison.com
