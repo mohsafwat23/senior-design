@@ -1,4 +1,4 @@
 Change tf to Pose in aruco_marker_pose_estimation_tf.py
 Figure out how to exit the landing mode in landing_pid.py
-Look into Fuzzy controller
-Tune PID controller
+Use the Yaw in the PID to adjust the drone's yaw at close proximity to the target
+Make the mobile robot depend on the pose not counter

@@ -23,6 +23,7 @@
     <depend>rclcpp</depend>
     <depend>std_msgs</depend>
     <depend>tello_msgs</depend>
+    <depend>nav_msgs</depend>
 
     <exec_depend>gazebo_ros_pkgs</exec_depend>
 

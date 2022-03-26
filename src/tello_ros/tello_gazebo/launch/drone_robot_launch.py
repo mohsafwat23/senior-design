@@ -26,7 +26,7 @@ def generate_launch_description():
 
         # Spawn tello.urdf
         Node(package='tello_gazebo', executable='inject_entity.py', output='screen',
-             arguments=[urdf_path, '0', '0', '1', '0']),
+             arguments=[urdf_path, '0', '0', '1', '0.7']),
         
         # Spawn tello.urdf
         Node(package='tello_gazebo', executable='inject_entity.py', output='screen',

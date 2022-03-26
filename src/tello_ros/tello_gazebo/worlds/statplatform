@@ -86,170 +86,6 @@
       <elevation>0</elevation>
       <heading_deg>0</heading_deg>
     </spherical_coordinates>
-    <model name='tello_1'>
-      <link name='base_link_1'>
-        <inertial>
-          <pose>3e-06 0 0 0 -0 0</pose>
-          <mass>0.10001</mass>
-          <inertia>
-            <ixx>0.000291833</ixx>
-            <ixy>0</ixy>
-            <ixz>0</ixz>
-            <iyy>0.000541012</iyy>
-            <iyz>0</iyz>
-            <izz>0.000291845</izz>
-          </inertia>
-        </inertial>
-        <collision name='base_link_1_fixed_joint_lump__collision_collision'>
-          <pose>0 0 0 0 -0 0</pose>
-          <geometry>
-            <box>
-              <size>0.18 0.18 0.05</size>
-            </box>
-          </geometry>
-          <max_contacts>10</max_contacts>
-          <surface>
-            <contact>
-              <ode/>
-            </contact>
-            <bounce/>
-            <friction>
-              <torsional>
-                <ode/>
-              </torsional>
-              <ode/>
-            </friction>
-          </surface>
-        </collision>
-        <collision name='base_link_1_fixed_joint_lump__camera_link_1_collision_1'>
-          <pose>0.035 0 0 0 -0 0</pose>
-          <geometry>
-            <sphere>
-              <radius>0.01</radius>
-            </sphere>
-          </geometry>
-          <surface>
-            <contact>
-              <ode/>
-            </contact>
-            <friction>
-              <ode/>
-              <torsional>
-                <ode/>
-              </torsional>
-            </friction>
-            <bounce/>
-          </surface>
-          <max_contacts>10</max_contacts>
-        </collision>
-        <visual name='base_link_1_visual'>
-          <pose>0 0 0.01 0 -0 0</pose>
-          <geometry>
-            <box>
-              <size>0.07 0.02 0.02</size>
-            </box>
-          </geometry>
-        </visual>
-        <visual name='base_link_1_visual_1'>
-          <pose>0 0 -0.01 0 -0 0</pose>
-          <geometry>
-            <box>
-              <size>0.07 0.02 0.02</size>
-            </box>
-          </geometry>
-        </visual>
-        <visual name='base_link_1_visual_2'>
-          <pose>0.05 -0.05 0 0 -0 0</pose>
-          <geometry>
-            <cylinder>
-              <length>0.01</length>
-              <radius>0.045</radius>
-            </cylinder>
-          </geometry>
-        </visual>
-        <visual name='base_link_1_visual_3'>
-          <pose>-0.05 0.05 0 0 -0 0</pose>
-          <geometry>
-            <cylinder>
-              <length>0.01</length>
-              <radius>0.045</radius>
-            </cylinder>
-          </geometry>
-        </visual>
-        <visual name='base_link_1_visual_4'>
-          <pose>-0.05 -0.05 0 0 -0 0</pose>
-          <geometry>
-            <cylinder>
-              <length>0.01</length>
-              <radius>0.045</radius>
-            </cylinder>
-          </geometry>
-        </visual>
-        <visual name='base_link_1_visual_5'>
-          <pose>0.05 0.05 0 0 -0 0</pose>
-          <geometry>
-            <cylinder>
-              <length>0.01</length>
-              <radius>0.045</radius>
-            </cylinder>
-          </geometry>
-        </visual>
-        <visual name='base_link_1_fixed_joint_lump__camera_link_1_visual_6'>
-          <pose>0.035 0 0 0 -0 0</pose>
-          <geometry>
-            <sphere>
-              <radius>0.01</radius>
-            </sphere>
-          </geometry>
-        </visual>
-        <sensor name='drone1' type='camera'>
-          <update_rate>50</update_rate>
-          <camera name='head'>
-            <horizontal_fov>0.96</horizontal_fov>
-            <image>
-              <width>960</width>
-              <height>720</height>
-              <format>R8G8B8</format>
-            </image>
-            <clip>
-              <near>0.1</near>
-              <far>300</far>
-            </clip>
-            <noise>
-              <type>gaussian</type>
-              <mean>0</mean>
-              <stddev>0.007</stddev>
-            </noise>
-          </camera>
-          <plugin name='camera_controller_1' filename='libgazebo_ros_camera.so'>
-            <alwaysOn>1</alwaysOn>
-            <updateRate>0.0</updateRate>
-            <cameraName>this_is_ignored</cameraName>
-            <imageTopicName>image_raw</imageTopicName>
-            <cameraInfoTopicName>camera_info</cameraInfoTopicName>
-            <frameName>camera_link_1</frameName>
-            <hackBaseline>0.07</hackBaseline>
-            <distortionK1>0.0</distortionK1>
-            <distortionK2>0.0</distortionK2>
-            <distortionK3>0.0</distortionK3>
-            <distortionT1>0.0</distortionT1>
-            <distortionT2>0.0</distortionT2>
-          </plugin>
-          <pose>0.035 0 0 0 -0 0</pose>
-        </sensor>
-        <self_collide>0</self_collide>
-        <enable_wind>0</enable_wind>
-        <kinematic>0</kinematic>
-      </link>
-      <static>0</static>
-      <plugin name='TelloPlugin' filename='libTelloPlugin.so'>
-        <namespace>drone1</namespace>
-        <parameter name='use_sim_time' type='bool'>1</parameter>
-        <link_name>base_link_1</link_name>
-        <center_of_mass>0 0 0</center_of_mass>
-      </plugin>
-      <pose>0 0 1 0 -0 0</pose>
-    </model>
     <model name='Charging Dock With ArUco'>
       <static>1</static>
       <link name='docking_station_link'>
@@ -268,7 +104,7 @@
         <collision name='docking_station_collision'>
           <geometry>
             <box>
-              <size>0.35 0.35 0.5</size>
+              <size>0.35 0.6 0.65</size>
             </box>
           </geometry>
           <max_contacts>10</max_contacts>
@@ -288,7 +124,7 @@
         <visual name='docking_station_visual'>
           <geometry>
             <box>
-              <size>0.35 0.35 0.5</size>
+              <size>0.35 0.6 0.65</size>
             </box>
           </geometry>
           <material>
@@ -302,7 +138,7 @@
           <pose relative_to='docking_station_link'>0.3 0 -0.1 0 -0 0</pose>
           <geometry>
             <box>
-              <size>0.3 0.25 0.05</size>
+              <size>0.5 0.6 0.05</size>
             </box>
           </geometry>
           <max_contacts>10</max_contacts>
@@ -323,7 +159,7 @@
           <pose relative_to='docking_station_link'>0.3 0 -0.1 0 -0 0</pose>
           <geometry>
             <box>
-              <size>0.3 0.25 0.05</size>
+              <size>0.5 0.6 0.05</size>
             </box>
           </geometry>
         </visual>
@@ -332,17 +168,17 @@
         <kinematic>0</kinematic>
       </link>
       <link name='aruco_marker_link'>
-        <pose>0.18 0 0.4 -9.3e-05 1.57079 3.14159</pose>
+        <pose>0.18 -0.1 0.4 -9.3e-05 1.57079 3.14159</pose>
         <visual name='visual'>
           <geometry>
             <box>
-              <size>0.1778 0.1778 1e-05</size>
+              <size>0.296 0.296 1e-05</size>
             </box>
           </geometry>
           <material>
             <script>
-              <uri>model://charging_dock_with_aruco/materials/scripts</uri>
-              <uri>model://charging_dock_with_aruco/materials/textures</uri>
+              <uri>model://stationary_platform_with_aruco/materials/scripts</uri>
+              <uri>model://stationary_platform_with_aruco/materials/textures</uri>
               <name>ArucoVisualMarker1/Marker</name>
             </script>
             <ambient>1 1 1 1</ambient>
@@ -361,11 +197,11 @@
         <kinematic>0</kinematic>
       </link>
       <link name='aruco_marker_link_2'>
-        <pose>0.18 0 0.25 -9.3e-05 1.57079 3.14159</pose>
+        <pose>0.18 0.15 0.4 -9.3e-05 1.57079 3.14159</pose>
         <visual name='visual'>
           <geometry>
             <box>
-              <size>0.08 0.08 1e-05</size>
+              <size>0.1355 0.1355 1e-05</size>
             </box>
           </geometry>
           <material>
@@ -389,30 +225,30 @@
         <enable_wind>0</enable_wind>
         <kinematic>0</kinematic>
       </link>
-      <pose>1.9956 -1.07596 0 0 -0 0</pose>
+      <pose>3.48244 -0.299965 0 0 -0 0</pose>
     </model>
     <state world_name='default'>
-      <sim_time>2606 256000000</sim_time>
-      <real_time>54 675842920</real_time>
-      <wall_time>1647148721 93192525</wall_time>
-      <iterations>54005</iterations>
+      <sim_time>92 355000000</sim_time>
+      <real_time>97 437268031</real_time>
+      <wall_time>1648324845 373560404</wall_time>
+      <iterations>92355</iterations>
       <model name='Charging Dock With ArUco'>
-        <pose>2.04788 1.97572 0 0 0 -2.13982</pose>
+        <pose>8.40294 -0.116907 0 0 -0 3.14064</pose>
         <scale>1 1 1</scale>
         <link name='aruco_marker_link'>
-          <pose>1.95089 1.82408 0.4 -9.3e-05 1.57079 1.00177</pose>
+          <pose>8.22303 -0.016737 0.4 -9.3e-05 1.57079 -0.000952</pose>
           <velocity>0 0 0 0 -0 0</velocity>
           <acceleration>0 0 0 0 -0 0</acceleration>
           <wrench>0 0 0 0 -0 0</wrench>
         </link>
         <link name='aruco_marker_link_2'>
-          <pose>1.95089 1.82408 0.25 -9.3e-05 1.57079 1.00177</pose>
+          <pose>8.22279 -0.266736 0.4 -9.3e-05 1.57079 -0.000952</pose>
           <velocity>0 0 0 0 -0 0</velocity>
           <acceleration>0 0 0 0 -0 0</acceleration>
           <wrench>0 0 0 0 -0 0</wrench>
         </link>
         <link name='docking_station_link'>
-          <pose>2.04788 1.97572 0.25 0 -0 -2.13982</pose>
+          <pose>8.40294 -0.116907 0.25 0 -0 3.14064</pose>
           <velocity>0 0 0 0 -0 0</velocity>
           <acceleration>0 0 0 0 -0 0</acceleration>
           <wrench>0 0 0 0 -0 0</wrench>
@@ -428,23 +264,13 @@
           <wrench>0 0 0 0 -0 0</wrench>
         </link>
       </model>
-      <model name='tello_1'>
-        <pose>0.169307 -0.094962 0.025 0 -0 -0.023749</pose>
-        <scale>1 1 1</scale>
-        <link name='base_link_1'>
-          <pose>0.169307 -0.094962 0.025 0 -0 -0.023749</pose>
-          <velocity>-2e-05 0.000869 0.006683 -0.034762 -0.000815 -0</velocity>
-          <acceleration>-0.040717 1.73819 13.3664 -0.358769 -0.869761 9.5e-05</acceleration>
-          <wrench>-0.004072 0.173836 1.33677 0 -0 0</wrench>
-        </link>
-      </model>
       <light name='sun'>
         <pose>0 0 10 0 -0 0</pose>
       </light>
     </state>
     <gui fullscreen='0'>
       <camera name='user_camera'>
-        <pose>3.55426 -1.56757 1.44806 0 0.275643 2.3562</pose>
+        <pose>-22.7634 -1.2165 5.83798 0 -0.008357 0.212195</pose>
         <view_controller>orbit</view_controller>
         <projection_type>perspective</projection_type>
       </camera>

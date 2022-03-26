@@ -42,6 +42,8 @@ import sys
 import geometry_msgs.msg
 import rclpy
 from tello_msgs.srv import TelloAction
+from std_srvs.srv import Empty
+from gazebo_msgs.srv import SpawnEntity
 
 if sys.platform == 'win32':
     import msvcrt
@@ -55,55 +57,55 @@ This node takes keypresses from the keyboard and publishes them
 as Twist messages. It works best with a US keyboard layout.
 ---------------------------
 Moving around:
-   u    i    o
-   j    k    l
+   u    w    o
+   d    s    a
    m    ,    .
 For Holonomic mode (strafing), hold down the shift key:
 ---------------------------
    U    I    O
    J    K    L
    M    <    >
-t : up (+z)
-b : down (-z)
+z : up (+z)
+x : down (-z)
 anything else : stop
-q/z : increase/decrease max speeds by 10%
-w/x : increase/decrease only linear speed by 10%
-e/c : increase/decrease only angular speed by 10%
+m/n : increase/decrease max speeds by 10%
+b/v : increase/decrease only linear speed by 10%
+>/< : increase/decrease only angular speed by 10%
 CTRL-C to quit
 """
 actionBindings = {
     't': 'takeoff',
-    'p': 'land',
+    'q': 'land',
+    'p': 'reset',
 }
 
 moveBindings = {
-    'i': (1, 0, 0, 0),
+    #Forward/Backward
+    'w': (1, 0, 0, 0),
+    's': (-1, 0, 0, 0),
+    #Left/Right
+    'a': (0, 1, 0, 0),
+    'd': (0, -1, 0, 0),
+    #Up/Down
+    'z': (0, 0, 1, 0),
+    'x': (0, 0, -1, 0),
+    #Rotate Left/Right
+    'e': (0, 0, 0, 1),
+    'r': (0, 0, 0, -1),
+    #Rotate Forward/Backward
     'o': (1, 0, 0, -1),
-    'j': (0, 0, 0, 1),
-    'l': (0, 0, 0, -1),
-    'u': (1, 0, 0, 1),
-    ',': (-1, 0, 0, 0),
-    '.': (-1, 0, 0, 1),
-    'm': (-1, 0, 0, -1),
-    'O': (1, -1, 0, 0),
-    'I': (1, 0, 0, 0),
-    'J': (0, 1, 0, 0),
-    'L': (0, -1, 0, 0),
-    'U': (1, 1, 0, 0),
-    '<': (-1, 0, 0, 0),
-    '>': (-1, -1, 0, 0),
-    'M': (-1, 1, 0, 0),
-    'v': (0, 0, 1, 0),
-    'b': (0, 0, -1, 0),
+    'i': (1, 0, 0, 1),
+    'l': (-1, 0, 0, -1),
+    'k': (-1, 0, 0, 1),
 }
 
 speedBindings = {
-    'q': (1.1, 1.1),
-    'z': (.9, .9),
-    'w': (1.1, 1),
-    'x': (.9, 1),
-    'e': (1, 1.1),
-    'c': (1, .9),
+    'm': (1.1, 1.1),
+    'n': (.9, .9),
+    'b': (1.1, 1),
+    'v': (.9, 1),
+    '>': (1, 1.1),
+    '<': (1, .9),
 }
 
 
@@ -143,6 +145,8 @@ def main():
     node = rclpy.create_node('teleop_twist_keyboard')
     pub = node.create_publisher(geometry_msgs.msg.Twist, '/drone1/cmd_vel', 10)
     drone_action_client = node.create_client(TelloAction, '/drone1/tello_action')
+    spawn_client = node.create_client(SpawnEntity, 'spawn_entity')
+
     speed = 0.2#0.5
     turn = 0.2 #1.0
     x = 0.0
@@ -180,6 +184,9 @@ def main():
                     request = TelloAction.Request()
                     request.cmd = actionBindings[key]
                     drone_action_client.call_async(request)
+                # elif actionBindings[key] == 'reset':
+                #     print(actionBindings[key])
+                #     reset_world()
 
             else:
                 x = 0.0

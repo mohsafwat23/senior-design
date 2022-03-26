@@ -10,7 +10,7 @@ from launch.actions import ExecuteProcess
 
 def generate_launch_description():
     ns = 'drone1'
-    world_path = os.path.join(get_package_share_directory('tello_gazebo'), 'worlds', 'platform3')
+    world_path = os.path.join(get_package_share_directory('tello_gazebo'), 'worlds', 'static.world')
     urdf_path = os.path.join(get_package_share_directory('tello_description'), 'urdf', 'tello_1.urdf')
 
     return LaunchDescription([
@@ -33,7 +33,9 @@ def generate_launch_description():
         
         Node(package='fiducial_vlam', executable='aruco_marker_pose_estimation_tf.py'),
 
-        # Node(package='fiducial_vlam', executable='landing_pid.py'),
+        Node(package='fiducial_vlam', executable='landing_pid.py'),
+
+        #Node(package='fiducial_vlam', executable='pid_ZN_tune_simple.py'),
 
      #    # Joystick driver, generates /namespace/joy messages
      #    Node(package='joy', executable='joy_node', output='screen',

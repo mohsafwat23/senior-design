@@ -202,6 +202,13 @@ install(PROGRAMS
   scripts/tello_keyboard.py
   DESTINATION lib/${PROJECT_NAME}
   )
+
+# Install Python executables
+install(PROGRAMS
+  scripts/tello_image_publisher.py
+  DESTINATION lib/${PROJECT_NAME}
+  )
+
 # Install executables
 install(
   TARGETS tello_driver_main tello_joy_main tello_emulator

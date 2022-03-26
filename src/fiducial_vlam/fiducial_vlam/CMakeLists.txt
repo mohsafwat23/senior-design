@@ -143,6 +143,7 @@ set(VMAP_NODE_DEPS
   tf2_msgs
   visualization_msgs
   yaml_cpp_vendor
+  nav_msgs
   )
 
 add_library(vmap_node SHARED
@@ -206,6 +207,7 @@ install(DIRECTORY include/
 install(PROGRAMS
   scripts/aruco_marker_pose_estimation_tf.py
   scripts/landing_pid.py
+  scripts/pid_ZN_tune_simple.py
 	DESTINATION lib/${PROJECT_NAME}
 	)
 #=============

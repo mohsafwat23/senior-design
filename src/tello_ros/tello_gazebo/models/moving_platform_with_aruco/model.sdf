@@ -79,31 +79,31 @@
         </inertial>
         <geometry>
           <box>
-            <size>0.1 0.4 0.60</size>
+            <size>0.1 0.6 0.60</size>
           </box>
         </geometry>
       </collision>
       <visual name="vertical_visual">
         <geometry>
           <box>
-            <size>0.1 0.4 0.60</size>
+            <size>0.1 0.6 0.60</size>
           </box>
         </geometry>
       </visual>
     </link> 
 
     <link name="aruco_marker_link">
-      <pose relative_to = "vertical_link" >0.051 -0.05 0.12 3.1415 1.5708 0</pose>
+      <pose relative_to = "vertical_link" >0.051 -0.1 0.12 3.1415 1.5708 0</pose>
       <visual name='visual'>
         <geometry>
           <box>
-            <size>0.1778 0.1778 1e-5</size>
+            <size>0.296 0.296 1e-5</size>
           </box>
         </geometry>
         <material>
           <script>
-            <uri>model://charging_dock_with_aruco/materials/scripts</uri>
-            <uri>model://charging_dock_with_aruco/materials/textures</uri>
+            <uri>model://moving_platform_with_aruco/materials/scripts</uri>
+            <uri>model://moving_platform_with_aruco/materials/textures</uri>
             <name>ArucoVisualMarker1/Marker</name>
           </script>
           <ambient>1 1 1 1</ambient>
@@ -119,11 +119,11 @@
       </visual>
     </link>
     <link name="aruco_marker_link_2">
-      <pose relative_to = "vertical_link" >0.051 0.1 0.12 3.1415 1.5708 0 </pose>
+      <pose relative_to = "vertical_link" >0.051 0.15 0.12 3.1415 1.5708 0 </pose>
       <visual name='visual'>
         <geometry>
           <box>
-            <size>0.08 0.08 1e-5</size>
+            <size>0.1355 0.1355 1e-5</size>
           </box>
         </geometry>
         <material>

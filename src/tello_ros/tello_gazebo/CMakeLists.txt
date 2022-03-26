@@ -32,6 +32,7 @@ find_package(rclcpp REQUIRED)
 find_package(sensor_msgs REQUIRED)
 find_package(std_msgs REQUIRED)
 find_package(tello_msgs REQUIRED)
+find_package(nav_msgs REQUIRED)
 
 # Local includes
 include_directories(
@@ -40,6 +41,7 @@ include_directories(
   ${geometry_msgs_INCLUDE_DIRS}
   ${std_msgs_INCLUDE_DIRS}
   ${tello_msgs_INCLUDE_DIRS}
+  ${nav_msgs_INCLUDE_DIRS}
 )
 
 #=============
@@ -73,6 +75,20 @@ ament_target_dependencies(mobrob_node rclcpp geometry_msgs)
 install(TARGETS
   mobrob_node
   DESTINATION lib/${PROJECT_NAME})
+
+#=============
+# gazebo pose node
+#=============
+
+# add_executable(gazebo_pose_node
+#   src/actual_pose
+# )
+# ament_target_dependencies(gazebo_pose_node rclcpp geometry_msgs)
+
+# install(TARGETS
+#   gazebo_pose_node
+#   DESTINATION lib/${PROJECT_NAME})
+
 
 #=============
 # Install

@@ -31,12 +31,10 @@ class MinimalPublisher : public rclcpp::Node
       if (count_ < 20) {
         message.linear.x = 0.0;
         message.angular.z = 0.0;
-      } else if (count_ < 100) {
-        message.linear.x = -0.7; // m/s
+      } 
+      else {
+        message.linear.x = -0.5; // m/s
         message.angular.z = 0.02; // rad/s
-      } else {
-        message.linear.x = 0.0;
-        message.angular.z = 0.0;
       }
       count_++;    
       //RCLCPP_INFO(this->get_logger(), "Publishing: '%s'", message.data.c_str());

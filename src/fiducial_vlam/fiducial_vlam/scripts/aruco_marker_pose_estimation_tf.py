@@ -13,7 +13,7 @@ email: mohamedmohabsafwat@gmail.com
 import rclpy # Python library for ROS 2
 from rclpy.node import Node # Handles the creation of nodes
 from cv_bridge import CvBridge # Package to convert between ROS and OpenCV Images
-from geometry_msgs.msg import TransformStamped, Pose # Handles TransformStamped message
+from geometry_msgs.msg import TransformStamped, Pose, Vector3 # Handles TransformStamped message
 from sensor_msgs.msg import Image # Image is the message type
 from tf2_ros import TransformBroadcaster
 import os
@@ -60,7 +60,8 @@ class ArucoNode(Node):
     
     # Declare parameters
     self.declare_parameter("aruco_dictionary_name", "DICT_ARUCO_ORIGINAL")
-    self.declare_parameter("aruco_marker_side_length", 0.1778)
+    #self.declare_parameter("aruco_marker_side_length", 0.1778)
+    self.declare_parameter("aruco_marker_side_length", 0.296)
     self.declare_parameter("camera_calibration_parameters_filename", "/home/mohamed/dev_ws/src/opencv_tools/data/calibration_chessboard.yaml")
     self.declare_parameter("image_topic", "/drone1/image_raw")
     self.declare_parameter("aruco_marker_name", "aruco_marker")
@@ -97,6 +98,12 @@ class ArucoNode(Node):
      [0.               , 0.               , 1.   ]
      ])
     self.dst = np.array([[ 0., 0.,  0.,  0., 0.]])
+
+    self.camera_FOV = 82.6 #degrees FOV of the drone camera
+    self.angle = (180.0 - self.camera_FOV)/2.0
+    self.platform_width = 0.55 #meters
+    self.distance_min = self.platform_width/2 * math.tan(math.radians(self.angle))
+    self.distance_des = 8*self.distance_min
     #TELLO DRONE CALIBRATION
     # self.mtx = np.array([
     #   [1.41751417e+03, 0.00000000e+00, 5.73407595e+02],
@@ -116,6 +123,8 @@ class ArucoNode(Node):
     self.this_aruco_dictionary = cv2.aruco.Dictionary_get(ARUCO_DICT[aruco_dictionary_name])
     self.this_aruco_parameters = cv2.aruco.DetectorParameters_create()
       
+    # make a publisher that publishes the angle
+    #self.pub_angle = self.create_publisher(Vector3, "/angle_flipped", 1)
     # Create the subscriber. This subscriber will receive an Image
     # from the video_frames topic. The queue size is 10 messages.
 
@@ -124,7 +133,7 @@ class ArucoNode(Node):
       Image, 
       image_topic, 
       self.listener_callback, 
-      1)
+      10)
     self.subscription # prevent unused variable warning
     # self.pose_pub = self.create_publisher(Pose, 'pose', 1)
     # self.pos = Pose()
@@ -146,14 +155,16 @@ class ArucoNode(Node):
   
     # Convert ROS Image message to OpenCV image
     current_frame = self.bridge.imgmsg_to_cv2(data)
-    if self.distance > 0.5:
+    if self.distance > self.distance_des:
       self.this_aruco_dictionary = cv2.aruco.Dictionary_get(ARUCO_DICT['DICT_ARUCO_ORIGINAL'])
       self.this_aruco_parameters = cv2.aruco.DetectorParameters_create()
-      self.aruco_marker_side_length = 0.1778
+      #self.aruco_marker_side_length = 0.1778
+      self.aruco_marker_side_length = 0.296
     else:
       self.this_aruco_dictionary = cv2.aruco.Dictionary_get(ARUCO_DICT['DICT_6X6_50'])
       self.this_aruco_parameters = cv2.aruco.DetectorParameters_create()
-      self.aruco_marker_side_length = 0.08
+      #self.aruco_marker_side_length = 0.08
+      self.aruco_marker_side_length = 0.1355
     # Detect ArUco markers in the video frame
     (corners, marker_ids, rejected) = cv2.aruco.detectMarkers(
       current_frame, self.this_aruco_dictionary, parameters=self.this_aruco_parameters,
@@ -207,9 +218,34 @@ class ArucoNode(Node):
         #   angle = -2*math.acos(tnorm @ forward)
           #rotation_matrix[0:3, 0:3] = cv2.Rodrigues(angle * axis)[0] @ rotation_matrix[0:3, 0:3]
 
+
+        #r = R.from_matrix(rotation_matrix[0:3, 0:3])
+        print("rot",rotation_matrix[2:3, 0:3])
+
+        Z_x = float(rotation_matrix[:,2:3][0][0])
+        Z_y = float(rotation_matrix[:,2:3][1][0])
+        Z_z = float(rotation_matrix[:,2:3][2][0])
+        #if Z_y < 0:
+        #   flip_axis=np.array([
+        #   [ 1,   1,  -1],
+        #   [ 1,   1,  -1],
+        #   [-1,  -1,   1],])
+        #   rotation_matrix[0:3, 0:3] = rotation_matrix[0:3, 0:3] @ flip_axis
+        #   forward = np.array([0, 1, 0])
+        #   tnorm = T / np.linalg.norm(T)
+        #   axis = np.cross(tnorm, forward)
+        #   angle = -2*math.acos(tnorm @ forward)
+        #   rotation_matrix[0:3, 0:3] = cv2.Rodrigues(angle * axis)[0] @ rotation_matrix[0:3, 0:3]
         r = R.from_matrix(rotation_matrix[0:3, 0:3])
+        
+        angle_vector = Vector3()
+        angle_vector.x = Z_x
+        angle_vector.y = Z_y
+        angle_vector.z = Z_z
+        #self.pub_angle.publish(angle_vector)
         quat = r.as_quat()   
-         
+        
+        #self.pub_angle.publish(self.angle_flip)
         # Quaternion format     
         # t.transform.rotation.x = quat[0] 
         # t.transform.rotation.y = quat[1] 
@@ -273,4 +309,5 @@ def main(args=None):
   rclpy.shutdown()
    
 if __name__ == '__main__':
+    time.sleep(5)
     main()
