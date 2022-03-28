@@ -93,7 +93,7 @@
     </link> 
 
     <link name="aruco_marker_link">
-      <pose relative_to = "vertical_link" >0.051 -0.1 0.12 3.1415 1.5708 0</pose>
+      <pose relative_to = "vertical_link" >0.051 -0.12 0.0 3.1415 1.5708 0</pose>
       <visual name='visual'>
         <geometry>
           <box>
@@ -119,7 +119,7 @@
       </visual>
     </link>
     <link name="aruco_marker_link_2">
-      <pose relative_to = "vertical_link" >0.051 0.15 0.12 3.1415 1.5708 0 </pose>
+      <pose relative_to = "vertical_link" >0.051 0.11 -0.05 3.1415 1.5708 0 </pose>
       <visual name='visual'>
         <geometry>
           <box>

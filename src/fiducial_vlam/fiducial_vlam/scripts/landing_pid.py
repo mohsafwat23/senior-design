@@ -34,12 +34,19 @@ class LandingNode(Node):
         self.integralZ = 0
         self.integralYaw = 0
         self.kp_xyz = np.array([0.4, 0.4, 0.4, 0.4])
-        self.kd_xyz = np.array([0.2, 0.2, 0.2, 0.2])
+        self.kd_xyz = np.array([0.2, 0.2, 0.2, 0.5])
         self.ki_xyz = np.array([0.0, 0.0, 0.0, 0.0])
         self.error_prevX = 0
         self.error_prevY = 0
         self.error_prevZ = 0
         self.error_prevYaw = 0
+
+        # distance properties
+        self.camera_FOV = 82.6 #degrees FOV of the drone camera
+        self.angle = (180.0 - self.camera_FOV)/2.0
+        self.platform_width = 0.55 #meters
+        self.distance_min = self.platform_width/2 * math.tan(math.radians(self.angle))
+        self.distance_des = 8*self.distance_min #meters
 
         self.landing_command_pub = self.create_publisher(Twist,'/drone1/cmd_vel', 1)
         self.drone_angle = self.create_publisher(Vector3,'/angle_drone', 1)
@@ -57,16 +64,16 @@ class LandingNode(Node):
     def quat_to_euler(self, qx, qy, qz, qw):
         t0 = +2.0 * (qw * qx + qy * qz)
         t1 = +1.0 - 2.0 * (qx * qx + qy * qy)
-        roll_x = math.atan2(t0, t1)*(180/np.pi) #in degrees
+        roll_x = math.atan2(t0, t1)#*(180/np.pi) #in degrees
     
         t2 = +2.0 * (qw * qy - qz * qx)
         t2 = +1.0 if t2 > +1.0 else t2
         t2 = -1.0 if t2 < -1.0 else t2
-        pitch_y = math.asin(t2)*(180/np.pi) #in degrees
+        pitch_y = math.asin(t2)#*(180/np.pi) #in degrees
     
         t3 = +2.0 * (qw * qz + qx * qy)
         t4 = +1.0 - 2.0 * (qy * qy + qz * qz)
-        yaw_z = math.atan2(t3, t4)*(180/np.pi) #in degrees
+        yaw_z = math.atan2(t3, t4)#*(180/np.pi) #in degrees
 
         euler = np.array([roll_x, pitch_y, yaw_z])
         return euler
@@ -79,7 +86,7 @@ class LandingNode(Node):
         t_stamp_sec = msg.transforms[0].header.stamp.sec
         t_stamp_nsec = msg.transforms[0].header.stamp.nanosec
         t_stamp = float(t_stamp_sec + t_stamp_nsec/(10**9))
-        dt = t_stamp - self.t_old
+        dt = t_stamp - self.t_old #This time difference is about 0.025 s and doesnt work well
         dt = 1.0/50.0
         tx = msg.transforms[0].transform.translation.x
         ty = msg.transforms[0].transform.translation.y
@@ -102,29 +109,35 @@ class LandingNode(Node):
         #The Y sign is flipped because the drone is facing the opposite direction 
         errorY = -ty + self.y_desired
         errorZ = tz - self.z_desired
-        print(errorZ)
         """This doesn't work because of pose estimation ambiguity"""
         errorYaw = -angle[1] #pitch angle becuse the y-direction is facing up on the aruco marker
         #errorYaw = -tx
+
+        integralYaw = self.integralYaw + (errorYaw * dt)
+        derivativeYaw = (errorYaw - self.error_prevYaw)/dt
+        speed_YAW = self.kp_xyz[3] * errorYaw + self.kd_xyz[3] * derivativeYaw + self.ki_xyz[3] * integralYaw
         if distance < 0.8:
-            self.z_desired = 0.2
+            self.z_desired = 0.1
+            self.y_desired = -0.05
+            speed_YAW = float(np.clip(speed_YAW, -0.4, 0.4))
+        else:
+            speed_YAW = 0.0
+
+
+
         
         integralX = self.integralX + (errorX * dt)
         integralY = self.integralY + (errorY * dt)
         integralZ = self.integralZ + (errorZ * dt)
-        integralYaw = self.integralYaw + (errorYaw * dt)
         derivativeX = (errorX - self.error_prevX)/dt
         derivativeY = (errorY - self.error_prevY)/dt
         derivativeZ = (errorZ - self.error_prevZ)/dt
-        derivativeYaw = (errorYaw - self.error_prevYaw)/dt
         speed_LR = self.kp_xyz[0] * errorX + self.kd_xyz[0] * derivativeX  + self.ki_xyz[0] * integralX
         speed_UD = self.kp_xyz[1] * errorY + self.kd_xyz[1] * derivativeY  + self.ki_xyz[1] * integralY
         speed_FB = self.kp_xyz[2] * errorZ + self.kd_xyz[2] * derivativeZ  + self.ki_xyz[2] * integralZ
-        speed_YAW = self.kp_xyz[3] * errorYaw + self.kd_xyz[3] * derivativeYaw + self.ki_xyz[3] * integralYaw
         speed_LR = float(np.clip(speed_LR, -0.4, 0.4))
         speed_UD = float(np.clip(speed_UD, -0.6, 0.6))
         speed_FB = float(np.clip(speed_FB, -0.80, 0.80))
-        speed_YAW = float(np.clip(speed_YAW, -0.4, 0.4))
         """
         The speed values are defined as follows:
         twist.linear.x: forward/backward speed of the drone (m/s) 
@@ -139,14 +152,13 @@ class LandingNode(Node):
             speed_FB = 0.0
         if angle[1] == 0.0:
             speed_YAW = 0.0
-        print(speed_FB)
         twist = Twist()
         twist.linear.x = speed_FB
         twist.linear.y = speed_LR
         twist.linear.z = speed_UD
         twist.angular.x = 0.0
         twist.angular.y = 0.0
-        twist.angular.z = 0.0
+        twist.angular.z = speed_YAW#0.0
         self.landing_command_pub.publish(twist)
 
         angle_vector = Vector3()
