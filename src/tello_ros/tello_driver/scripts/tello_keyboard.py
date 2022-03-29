@@ -143,9 +143,9 @@ def main():
     rclpy.init()
 
     node = rclpy.create_node('teleop_twist_keyboard')
-    pub = node.create_publisher(geometry_msgs.msg.Twist, '/drone1/cmd_vel', 10)
-    drone_action_client = node.create_client(TelloAction, '/drone1/tello_action')
-    spawn_client = node.create_client(SpawnEntity, 'spawn_entity')
+    pub = node.create_publisher(geometry_msgs.msg.Twist, '/cmd_vel', 10)
+    drone_action_client = node.create_client(TelloAction, '/tello_action')
+    #spawn_client = node.create_client(SpawnEntity, 'spawn_entity')
 
     speed = 0.2#0.5
     turn = 0.2 #1.0

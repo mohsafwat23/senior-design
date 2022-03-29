@@ -41,7 +41,7 @@ def generate_launch_description():
         
         Node(package='fiducial_vlam', executable='aruco_marker_pose_estimation_tf.py'),
 
-        Node(package='fiducial_vlam', executable='landing_pid.py'),
+        Node(package='fiducial_vlam', executable='sim_pid.py'),
 
      #    # Joystick driver, generates /namespace/joy messages
      #    Node(package='joy', executable='joy_node', output='screen',

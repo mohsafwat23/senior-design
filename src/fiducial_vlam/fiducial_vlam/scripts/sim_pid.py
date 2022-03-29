@@ -27,14 +27,14 @@ class LandingNode(Node):
         # Initiate the Node class's constructor and give it a name
         super().__init__('landing_node')
 
-        self.z_desired = 0.1 #positive value
+        self.z_desired = 1.0 #positive value
         self.y_desired = 0.0 #negative value
         self.integralX = 0
         self.integralY = 0
         self.integralZ = 0
         self.integralYaw = 0
         self.kp_xyz = np.array([0.4, 0.4, 0.4, 0.4])
-        self.kd_xyz = np.array([0.1, 0.1, 0.1, 0.1])
+        self.kd_xyz = np.array([0.2, 0.2, 0.2, 0.5])
         self.ki_xyz = np.array([0.0, 0.0, 0.0, 0.0])
         self.error_prevX = 0
         self.error_prevY = 0
@@ -48,9 +48,9 @@ class LandingNode(Node):
         self.distance_min = self.platform_width/2 * math.tan(math.radians(self.angle))
         self.distance_des = 8*self.distance_min #meters
 
-        self.landing_command_pub = self.create_publisher(Twist,'/cmd_vel', 1)
+        self.landing_command_pub = self.create_publisher(Twist,'/drone1/cmd_vel', 1)
         self.drone_angle = self.create_publisher(Vector3,'/angle_drone', 1)
-        self.drone_action_client = self.create_client(TelloAction, '/tello_action')
+        self.drone_action_client = self.create_client(TelloAction, '/drone1/tello_action')
 
         self.t_old = time.time()
         print("Landing node initialized")
@@ -118,9 +118,8 @@ class LandingNode(Node):
         speed_YAW = self.kp_xyz[3] * errorYaw + self.kd_xyz[3] * derivativeYaw + self.ki_xyz[3] * integralYaw
         if distance < 0.8:
             self.z_desired = 0.1
-            self.y_desired = -0.1
+            self.y_desired = -0.05
             speed_YAW = float(np.clip(speed_YAW, -0.4, 0.4))
-            self.kp_xyz[1] = 2.0
         else:
             speed_YAW = 0.0
 
@@ -138,7 +137,7 @@ class LandingNode(Node):
         speed_FB = self.kp_xyz[2] * errorZ + self.kd_xyz[2] * derivativeZ  + self.ki_xyz[2] * integralZ
         speed_LR = float(np.clip(speed_LR, -0.4, 0.4))
         speed_UD = float(np.clip(speed_UD, -0.6, 0.6))
-        speed_FB = float(np.clip(speed_FB, -0.50, 0.50))
+        speed_FB = float(np.clip(speed_FB, -0.80, 0.80))
         """
         The speed values are defined as follows:
         twist.linear.x: forward/backward speed of the drone (m/s) 
@@ -157,7 +156,6 @@ class LandingNode(Node):
         twist.linear.x = speed_FB
         twist.linear.y = speed_LR
         twist.linear.z = speed_UD
-        print(speed_UD)
         twist.angular.x = 0.0
         twist.angular.y = 0.0
         twist.angular.z = speed_YAW#0.0
@@ -172,6 +170,7 @@ class LandingNode(Node):
             request = TelloAction.Request()
             request.cmd = "land"
             self.drone_action_client.call_async(request)
+            distance = 1.0
         self.t_old = t_stamp
         self.error_prevX = errorX
         self.error_prevY = errorY
