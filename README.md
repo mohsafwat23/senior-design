@@ -1,4 +1,4 @@
-# ME 352 senior-design, the University of Wisoncin-Madison
+# ME 352 senior-design, the University of Wisconsin-Madison
 Landing a quadrotor on a moving platform
 
 # Special thanks:
