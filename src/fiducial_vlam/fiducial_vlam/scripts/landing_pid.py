@@ -51,7 +51,7 @@ class LandingNode(Node):
         self.landing_command_pub = self.create_publisher(Twist,'/cmd_vel', 1)
         self.drone_angle = self.create_publisher(Vector3,'/angle_drone', 1)
         self.drone_action_client = self.create_client(TelloAction, '/tello_action')
-
+        
         self.t_old = time.time()
         print("Landing node initialized")
         self.subscription = self.create_subscription(

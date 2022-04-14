@@ -8,7 +8,7 @@ import time
 import rclpy # Python library for ROS 2
 from rclpy.node import Node # Handles the creation of nodes
 from geometry_msgs.msg import Vector3, PoseStamped, TransformStamped, Twist # Handles TransformStamped message
-from nav_msgs.msg import Path
+from std_msgs.msg import Bool
 import numpy as np
 from tf2_ros import TFMessage
 from tello_msgs.srv import TelloAction
@@ -29,12 +29,13 @@ class LandingNode(Node):
 
         self.z_desired = 1.0 #positive value
         self.y_desired = 0.0 #negative value
+        self.yaw_desired = 0.0 #initializer for yaw
         self.integralX = 0
         self.integralY = 0
         self.integralZ = 0
         self.integralYaw = 0
-        self.kp_xyz = np.array([0.4, 0.4, 0.4, 0.4])
-        self.kd_xyz = np.array([0.2, 0.2, 0.2, 0.5])
+        self.kp_xyz = np.array([0.4, 0.4, 0.4, 0.2])
+        self.kd_xyz = np.array([0.2, 0.2, 0.2, 0.2])
         self.ki_xyz = np.array([0.0, 0.0, 0.0, 0.0])
         self.error_prevX = 0
         self.error_prevY = 0
@@ -52,6 +53,10 @@ class LandingNode(Node):
         self.drone_angle = self.create_publisher(Vector3,'/angle_drone', 1)
         self.drone_action_client = self.create_client(TelloAction, '/drone1/tello_action')
 
+        # request = TelloAction.Request()
+        # request.cmd = "takeoff"
+        # self.drone_action_client.call_async(request)
+
         self.t_old = time.time()
         print("Landing node initialized")
         self.subscription = self.create_subscription(
@@ -60,6 +65,13 @@ class LandingNode(Node):
         self.listener_callback, 
         1)
         self.subscription # prevent unused variable warning
+
+        self.bool_subscription = self.create_subscription(
+        Bool,
+        '/large_aruco',
+        self.large_aruco_bool_callback,
+        1)
+        self.bool_subscription # prevent unused variable warning
 
     def quat_to_euler(self, qx, qy, qz, qw):
         t0 = +2.0 * (qw * qx + qy * qz)
@@ -95,7 +107,7 @@ class LandingNode(Node):
         qy = msg.transforms[0].transform.rotation.y
         qz = msg.transforms[0].transform.rotation.z
         qw = msg.transforms[0].transform.rotation.w
-        angle = self.quat_to_euler(qx, qy, qz, qw)
+        #angle = self.quat_to_euler(qx, qy, qz, qw)
         distance = np.sqrt(tx**2 + ty**2 + tz**2)
         """
         The pose distances are defined as follows:
@@ -109,19 +121,25 @@ class LandingNode(Node):
         #The Y sign is flipped because the drone is facing the opposite direction 
         errorY = -ty + self.y_desired
         errorZ = tz - self.z_desired
+        self.yaw_desired = np.arctan2(tx, tz)
+
         """This doesn't work because of pose estimation ambiguity"""
-        errorYaw = -angle[1] #pitch angle becuse the y-direction is facing up on the aruco marker
+        errorYaw = 0 - self.yaw_desired #pitch angle becuse the y-direction is facing up on the aruco marker
         #errorYaw = -tx
 
         integralYaw = self.integralYaw + (errorYaw * dt)
         derivativeYaw = (errorYaw - self.error_prevYaw)/dt
         speed_YAW = self.kp_xyz[3] * errorYaw + self.kd_xyz[3] * derivativeYaw + self.ki_xyz[3] * integralYaw
+        if self.large_aruco_bool:  #distance < 1.5:
+            speed_YAW = 0.0
+        else:
+            speed_YAW = float(np.clip(speed_YAW, -0.4, 0.4))
+
+        
         if distance < 0.8:
             self.z_desired = 0.1
             self.y_desired = -0.05
-            speed_YAW = float(np.clip(speed_YAW, -0.4, 0.4))
-        else:
-            speed_YAW = 0.0
+       
 
 
 
@@ -150,7 +168,7 @@ class LandingNode(Node):
             speed_UD = 0.0
         if tz == 0.0:
             speed_FB = 0.0
-        if angle[1] == 0.0:
+        if errorYaw == 0.0:
             speed_YAW = 0.0
         twist = Twist()
         twist.linear.x = speed_FB
@@ -161,11 +179,11 @@ class LandingNode(Node):
         twist.angular.z = speed_YAW#0.0
         self.landing_command_pub.publish(twist)
 
-        angle_vector = Vector3()
-        angle_vector.x = angle[0]
-        angle_vector.y = angle[1]
-        angle_vector.z = angle[2]
-        self.drone_angle.publish(angle_vector)
+        # angle_vector = Vector3()
+        # angle_vector.x = angle[0]
+        # angle_vector.y = angle[1]
+        # angle_vector.z = angle[2]
+        # self.drone_angle.publish(angle_vector)
         if distance > 0.05 and distance < 0.3:
             request = TelloAction.Request()
             request.cmd = "land"
@@ -180,6 +198,14 @@ class LandingNode(Node):
         self.integralY = integralY
         self.integralZ = integralZ
         self.integralYaw = integralYaw
+    
+    def large_aruco_bool_callback(self, msg):
+        """
+        Callback function.
+        This function gets called every time a message is received.
+        """
+        self.large_aruco_bool = msg.data
+        print("large_aruco_bool: ", self.large_aruco_bool)
 
 def main(args=None):
    
@@ -201,5 +227,4 @@ def main(args=None):
     rclpy.shutdown()
 
 if __name__ == '__main__':
-    time.sleep(5)
     main()

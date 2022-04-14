@@ -208,6 +208,8 @@ install(PROGRAMS
   scripts/aruco_marker_pose_estimation_tf.py
   scripts/landing_pid.py
   scripts/sim_pid.py
+  scripts/drone_ekf.py
+  scripts/camera_pose.py
   scripts/pid_ZN_tune_simple.py
 	DESTINATION lib/${PROJECT_NAME}
 	)

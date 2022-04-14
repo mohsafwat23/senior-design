@@ -33,7 +33,7 @@ def generate_launch_description():
         
         Node(package='fiducial_vlam', executable='aruco_marker_pose_estimation_tf.py'),
 
-        Node(package='fiducial_vlam', executable='sim_pid.py'),
+        # Node(package='fiducial_vlam', executable='sim_pid.py'),
 
         #Node(package='fiducial_vlam', executable='pid_ZN_tune_simple.py'),
 

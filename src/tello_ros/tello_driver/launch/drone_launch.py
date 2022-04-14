@@ -17,19 +17,24 @@ def generate_launch_description():
         #         ('/drone1/tello_action', '/tello_action'),
         #         ] 
         #     ),
+        # Node(
+        #     package='fiducial_vlam', 
+        #     executable='aruco_marker_pose_estimation_tf.py', output='screen', 
+        #     remappings=[
+        #         ("/drone1/image_raw", '/image_raw'),
+        #         ] 
+        #     ),
+        # Node(
+        #     package='tello_driver',
+        #     executable='tello_image_publisher.py', output='screen',
+        #     remappings=[
+        #         ("drone_video_frames", '/image_raw'),
+        #         ] 
+        # ),
         Node(
-            package='fiducial_vlam', 
-            executable='aruco_marker_pose_estimation_tf.py', output='screen', 
-            remappings=[
-                ("/drone1/image_raw", '/image_raw'),
-                ] 
-            ),
-        Node(
-            package='tello_driver',
-            executable='tello_image_publisher.py', output='screen',
-            remappings=[
-                ("drone_video_frames", '/image_raw'),
-                ] 
+            package='fiducial_vlam',
+            executable='camera_pose.py', output='screen',
         ),
+        Node(package='tello_driver', executable='tello_driver_main', output='screen'),
         #Node(package='tello_driver', executable='tello_driver_main', output='screen'),
     ])
