@@ -207,10 +207,19 @@ install(DIRECTORY include/
 install(PROGRAMS
   scripts/aruco_marker_pose_estimation_tf.py
   scripts/landing_pid.py
+  scripts/sim_pid_imu_fix.py
   scripts/sim_pid.py
+  scripts/sim_pid2.py
   scripts/drone_ekf.py
+  scripts/drone_lkf.py
+  scripts/drone_ekf_moving.py
+  scripts/drone_ekf_real.py
   scripts/camera_pose.py
+  scripts/camera_pose_reg.py
+  scripts/camera_pose_sim.py
+  scripts/basic_image_publisher.py
   scripts/pid_ZN_tune_simple.py
+  scripts/prevSemester.py
 	DESTINATION lib/${PROJECT_NAME}
 	)
 #=============

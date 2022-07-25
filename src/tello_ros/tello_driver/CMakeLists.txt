@@ -199,7 +199,7 @@ install(
 
 # Install Python executables
 install(PROGRAMS
-  scripts/tello_keyboard.py
+  scripts/tello_keyboard.py scripts/imudata.py scripts/drone_control.py
   DESTINATION lib/${PROJECT_NAME}
   )
 

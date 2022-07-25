@@ -34,7 +34,7 @@ class MinimalPublisher : public rclcpp::Node
       } 
       else {
         message.linear.x = -0.5; // m/s
-        message.angular.z = 0.02; // rad/s
+        message.angular.z = 0.00; // rad/s
       }
       count_++;    
       //RCLCPP_INFO(this->get_logger(), "Publishing: '%s'", message.data.c_str());

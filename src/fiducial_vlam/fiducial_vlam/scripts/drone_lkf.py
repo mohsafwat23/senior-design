@@ -32,7 +32,6 @@ class DroneEKF(Node):
 
         self.t_old = time.time()
         print("Landing node initialized")
-        self.vel_pub = self.create_publisher(Twist,'/cmd_vel', 1)
         timer_period = 0.05  # seconds
 
         self.pose_pub = self.create_publisher(Pose, '/drone/EKFpose', 1)
@@ -43,7 +42,7 @@ class DroneEKF(Node):
 
         self.cam_pose_sub = self.create_subscription(
         Pose, 
-        '/drone/pose', 
+        '/drone/poseBad', 
         self.camera_pose_subscriber, 
         1)
         self.cam_pose_sub # prevent unused variable warning
@@ -73,33 +72,30 @@ class DroneEKF(Node):
 
 
 
-        self.drone_vx,self.drone_vy,self.drone_vz,self.drone_omega = 0,0,0,0
+        self.drone_vx,self.drone_vy,self.drone_vz = 0,0,0
 
-        self.A = np.array([
-            [1,0,0,0,0,0],
-            [0,1,0,0,0,0],
-            [0,0,1,0,0,0],
-            [0,0,0,1,0,0],
-            [0,0,0,0,1,0],
-            [0,0,0,0,0,1],
-        ])#np.eye(6)      #state transition matrix
+        self.A = np.eye(3)  
+        # np.array([
+        #     [1,0,0,0,0,0],
+        #     [0,1,0,0,0,0],
+        #     [0,0,1,0,0,0],
+        # ])#np.eye(6)      #state transition matrix
 
         self.H_cam = np.array([
-            [1.0,0.0,0.0,0.0,0.0,0.0],
-            [0.0,1.0,0.0,0.0,0.0,0.0],
-            [0.0,0.0,1.0,0.0,0.0,0.0],
+            [1.0,0.0,0.0],
+            [0.0,1.0,0.0],
+            [0.0,0.0,1.0],
         ])  #state to measurement matrix  
         
-        #x,y,z,roll(phi), pitch(theta), yaw(psi)
-        self.x_hat_k_1 = np.array([[0.074,0.544,8.8,0,0,0]]).T #initial state 
+        #x,y,z
+        self.x_hat_k_1 = np.array([[0.074,0.544,8.8]]).T #initial state 
              
 
 
-        self.P_k_1 = np.eye(6)     #initialize covariance matrix
-        self.Q = 0.02*np.eye(6)  #process noise covariance 
+        self.P_k_1 = np.eye(3)     #initialize covariance matrix
+        self.Q = 0.02*np.eye(3)  #process noise covariance 
         
         self.R_cam = 0.4*np.eye(3)  #measurement noise covariance
-        self.R_imu = 0.4*np.eye(3)  #measurement noise covariance
 
         self.r2d = 180/np.pi
 
@@ -118,12 +114,6 @@ class DroneEKF(Node):
         self.angles = (0,0,0)
 
    
-
-        self.H_imu = np.array([
-            [0,0,0,1,0,0],
-            [0,0,0,0,1,0],
-            [0,0,0,0,0,1],
-        ])
 
         self.t_now = time.time()
 
@@ -172,61 +162,46 @@ class DroneEKF(Node):
 
         
         self.t_now = time.time()
-        u_k_1 = np.array([[self.drone_vx,self.drone_vy,self.drone_vz,self.drone_omega]]).T
+        u_k_1 = np.array([[self.drone_vx,self.drone_vy,self.drone_vz]]).T
         R_u_fix = np.array([
-            [0.0,1.0,0.0,0.0],
-            [0.0,0.0,1.0,0.0],
-            [-1.0,0.0,0.0,0.0],
-            [0.0,0.0,0.0,1.0],
+            [0.0,-1.0,0.0],
+            [0.0,0.0,-1.0],
+            [1.0,0.0,0.0],
             ])
+        # R_u_fix = np.array([
+        #     [1.0,0.0,0.0],
+        #     [0.0,0.0,1.0],
+        #     [0.0,1.0,0.0],
+        #     ])
         #the contol inputs are rotated 
         u_k_1 = R_u_fix@u_k_1 #== np.array([[self.drone_vy,self.drone_vz,-self.drone_vx,self.drone_omega]]).T
-        psi = self.x_hat_k_1[5][0]
-        phi = self.x_hat_k_1[3][0]
-        theta = self.x_hat_k_1[4][0]
         #print(theta,psi,phi)
 
+
         yaw = np.array([      #input matrix
-            [-np.sin(psi), np.cos(psi), 0],
-            [        0,        0, 1],
-            [-np.cos(psi), np.sin(psi), 0],
+            [np.cos(self.drone_yaw), 0, np.sin(self.drone_yaw)],
+            [        0,        -1., 0],
+            [np.sin(self.drone_yaw),0, -np.cos(self.drone_yaw)],
             ])
         
+
         roll = np.array([      #input matrix
-            [        0, -np.cos(phi), -np.sin(phi)],
-            [        0, -np.sin(phi),  np.cos(phi)],
-            [        1,         0,         0],
+            [np.cos(self.drone_roll), np.sin(self.drone_roll),0],
+            [np.sin(self.drone_roll),  -np.cos(self.drone_roll),0],
+            [        0,         0,         -1.],
             ])
+
 
         pitch = np.array([      #input matrix
-            [        0,         1,         0],
-            [ np.sin(theta),         0,  np.cos(theta)],
-            [-np.cos(theta),         0,  np.sin(theta)],
+            [        1.,         0,         0],
+            [0, -np.cos(self.drone_pitch),  np.sin(self.drone_pitch)],
+            [0,-np.sin(self.drone_pitch),  -np.cos(self.drone_pitch)],
             ])
 
-        rot = yaw @ roll @ pitch #pitch @ roll @ yaw#
+        rot = roll @ yaw @ pitch#yaw @ roll @ pitch #pitch @ roll @ yaw#
         
-        print(rot)
-       # self.H_cam[:3, :3] = rot.T    #inverse/transpose of rotation matrix
-        
-        # B = np.array([
-        #     [-np.sin(psi)                ,-(np.cos(psi)+np.cos(phi)),-np.sin(phi)             ,      0],
-        #     [np.sin(theta)               ,-np.sin(phi)              ,np.cos(phi)+np.cos(theta),      0],
-        #     [-(np.cos(psi)+np.cos(theta)),np.sin(psi)               ,np.sin(theta)            ,      0],
-        #     [0                           ,0                         ,0                        ,      0],
-        #     [0                           ,0                         ,0                        ,      0],
-        #     [0                           ,0                         ,0                        ,      1],
-        #     ])
-        B = np.array([
-            [1.,1.,1.,0.],
-            [1.,1.,1.,0.],
-            [1.,1.,1.,0.],
-            [0.,0.,0.,0.],
-            [0.,0.,0.,0.],
-            [0.,0.,0.,1.],
-            ])
-        B[0:3, 0:3] = rot#np.linalg.inv(rot)
-        B = self.dt*B
+
+        B = self.dt*rot
         #print(x_hat_k)
 
         #print(B)
@@ -239,12 +214,12 @@ class DroneEKF(Node):
 
         K1 = P_k@self.H_cam.T@np.linalg.inv(self.H_cam@P_k@self.H_cam.T + self.R_cam)
 
-        P_k_new = (np.identity(6) - K1@self.H_cam)@P_k
+        P_k_new = (np.identity(3) - K1@self.H_cam)@P_k
 
 
         if not (self.tx == 0.0 and self.ty == 0.0 and self.tz == 0.0):
-            z_k_1_cam = np.array([[-self.tx, -self.ty, self.tz]]).T
-            print("a",z_k_1_cam)
+            z_k_1_cam = np.array([[-self.tx, -self.ty, -self.tz]]).T
+            #print("a",z_k_1_cam)
             z_k_1_cam = rot@z_k_1_cam
             print("b",z_k_1_cam)
             #print("meas",x_hat_k, "obs",self.H_cam@x_hat_k)
@@ -259,12 +234,6 @@ class DroneEKF(Node):
             if self.no_marker > 15:
                 x_k_new = x_hat_k*0.01
 
-
-        K2 = P_k@self.H_imu.T@np.linalg.inv(self.H_imu@P_k@self.H_imu.T + self.R_imu)
-        z_k_1_imu = np.array([[self.drone_roll, self.drone_pitch, self.drone_yaw]]).T
-        #z_k_1_imu = np.array([[self.angles[0], self.angles[1], self.angles[2]]]).T
-        x_k_new = x_k_new + K2@(z_k_1_imu - self.H_imu@x_k_new)
-        P_k_new = (np.identity(6) - K2@self.H_imu)@P_k_new
         self.x_hat_k_1 = x_k_new
         self.P_k_1 = P_k_new
         #self.vel_pub.publish(twist)
@@ -273,7 +242,7 @@ class DroneEKF(Node):
         #print("x_k_new:",np.shape(x_k_new),"B:",np.shape(B),"u_k_1:",np.shape(u_k_1),"z_k_1_cam:",np.shape(z_k_1_imu))
         #change to tuple
         #self.quat_new = euler2quat(x_k_new[4][0], x_k_new[5][0], x_k_new[3][0])
-        quat2 = np.array([0.0,0.0,1.0,0.0])
+        quat2 = np.array([0.0,1.0,0.0,0.0])
         quat3 = self.quaternion_multiply(self.quat_new,quat2)
         #quat3 = self.quaternion_multiply(self.quat_new,quat2)
         #self.quat_new = euler2quat(self.drone_pitch,self.drone_yaw,self.drone_roll)
@@ -284,31 +253,31 @@ class DroneEKF(Node):
         t.header.stamp = self.get_clock().now().to_msg()
         t.header.frame_id = 'camera_depth_frame'
         t.child_frame_id = 'tello'
-        t.transform.translation.x = x_k_new[0][0]
-        t.transform.translation.y = x_k_new[1][0]
-        t.transform.translation.z = x_k_new[2][0]
-        t.transform.rotation.w = quat3[0]#self.drone_w#quat[0]
-        t.transform.rotation.x = quat3[1]#self.drone_x#quat[1]
-        t.transform.rotation.y = quat3[2]#self.drone_y#quat[2]
-        t.transform.rotation.z = quat3[3]#self.drone_z#quat[3]
-
-
-        # quat2 = np.array([0.0,0.0,1.0,0.0])
-        # quat3 = self.quaternion_multiply(self.quat_new,quat2)
-        # self.quat_new = euler2quat(self.drone_pitch,self.drone_yaw,self.drone_roll)
-
-        # t.transform.translation.x = self.x_hat_k_1[0][0]
-        # t.transform.translation.y = self.x_hat_k_1[1][0]
-        # t.transform.translation.z = self.x_hat_k_1[2][0]
+        # t.transform.translation.x = x_k_new[0][0]
+        # t.transform.translation.y = x_k_new[1][0]
+        # t.transform.translation.z = x_k_new[2][0]
         # t.transform.rotation.w = quat3[0]#self.drone_w#quat[0]
         # t.transform.rotation.x = quat3[1]#self.drone_x#quat[1]
         # t.transform.rotation.y = quat3[2]#self.drone_y#quat[2]
         # t.transform.rotation.z = quat3[3]#self.drone_z#quat[3]
 
 
-        self.pos.position.x = x_k_new[0][0]
-        self.pos.position.y = x_k_new[1][0]
-        self.pos.position.z = x_k_new[2][0]
+        # quat2 = np.array([0.0,0.0,1.0,0.0])
+        # quat3 = self.quaternion_multiply(self.quat_new,quat2)
+        # self.quat_new = euler2quat(self.drone_pitch,self.drone_yaw,self.drone_roll)
+
+        t.transform.translation.x = self.x_hat_k_1[0][0]
+        t.transform.translation.y = self.x_hat_k_1[1][0]
+        t.transform.translation.z = self.x_hat_k_1[2][0]
+        t.transform.rotation.w = quat3[0]#self.drone_w#quat[0]
+        t.transform.rotation.x = quat3[1]#self.drone_x#quat[1]
+        t.transform.rotation.y = quat3[2]#self.drone_y#quat[2]
+        t.transform.rotation.z = quat3[3]#self.drone_z#quat[3]
+
+
+        self.pos.position.x = self.x_hat_k_1[0][0]#x_k_new[0][0]
+        self.pos.position.y = self.x_hat_k_1[0][0]#x_k_new[1][0]
+        self.pos.position.z = self.x_hat_k_1[0][0]#x_k_new[2][0]
         self.pos.orientation.x = quat3[1] 
         self.pos.orientation.y = quat3[2]
         self.pos.orientation.z = quat3[3] 

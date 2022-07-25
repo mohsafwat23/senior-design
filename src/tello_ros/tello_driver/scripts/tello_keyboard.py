@@ -148,7 +148,7 @@ def main():
     #spawn_client = node.create_client(SpawnEntity, 'spawn_entity')
 
     speed = 0.2#0.5
-    turn = 0.2 #1.0
+    turn = 0.5 #1.0
     x = 0.0
     y = 0.0
     z = 0.0

@@ -9,6 +9,7 @@ import rclpy # Python library for ROS 2
 from rclpy.node import Node # Handles the creation of nodes
 from geometry_msgs.msg import Pose, PoseStamped, TransformStamped, Twist # Handles TransformStamped message
 from nav_msgs.msg import Path
+from sensor_msgs.msg import Imu
 import numpy as np
 from tf2_ros import TFMessage
 from tello_msgs.srv import TelloAction

@@ -89,9 +89,9 @@
         </geometry>
         <material>
           <script>
-            <uri>model://marker_0/materials/scripts</uri>
-            <uri>model://marker_0/materials/textures</uri>
-            <name>ArucoVisualMarker0/Marker</name>
+            <uri>model://stationary_platform_with_aruco/materials/scripts</uri>
+            <uri>model://stationary_platform_with_aruco/materials/textures</uri>
+            <name>ArucoVisualMarker2/Marker</name>
           </script>
           <ambient>1 1 1 1</ambient>
           <diffuse>1 1 1 1</diffuse>

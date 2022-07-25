@@ -35,12 +35,16 @@ class DroneEKF(Node):
         self.vel_pub = self.create_publisher(Twist,'/cmd_vel', 1)
         timer_period = 0.05  # seconds
 
+
+        ### publisher for the drone pose relative to the aruco marker frame
         self.pose_pub = self.create_publisher(Pose, '/drone/EKFpose', 1)
         self.pos = Pose()
 
         # Create the timer
         self.timer = self.create_timer(timer_period, self.ekf_drone)
 
+
+        ### subcribe to the marker pose relative to the drone's camera
         self.cam_pose_sub = self.create_subscription(
         Pose, 
         '/drone/pose', 
@@ -54,55 +58,64 @@ class DroneEKF(Node):
         # self.imu_subscriber, 
         # 1)
         
-
+        ### This subscribes to the drone's imu data (orientation)
         self.imu_sub = self.create_subscription(
         Imu, 
         '/drone1/imu', 
         self.imu_subscriber, 
         1)
 
-
-        self.vel_sub = self.create_subscription(
+        ### This subscribes to the drone's velocity data (control inputs)
+        self.drone_vel_sub = self.create_subscription(
         Twist, 
         '/drone1/cmd_vel', 
-        self.vel_subscriber, 
+        self.drone_vel_subscriber, 
         1)
 
+        ### This subscribes to the mobile robot velocity data (control inputs)
+        self.mobrob_vel_sub = self.create_subscription(
+        Twist, 
+        '//platform_robot/cmd_platform_robot', 
+        self.mobrob_vel_subscriber, 
+        1)
+        
+        ### TF broadcaster
         self.tfbroadcaster = TransformBroadcaster(self)
 
-
-
-
+        ###Initialize the drones control inputs
         self.drone_vx,self.drone_vy,self.drone_vz,self.drone_omega = 0,0,0,0
 
-        self.A = np.array([
-            [1,0,0,0,0,0],
-            [0,1,0,0,0,0],
-            [0,0,1,0,0,0],
-            [0,0,0,1,0,0],
-            [0,0,0,0,1,0],
-            [0,0,0,0,0,1],
-        ])#np.eye(6)      #state transition matrix
+        ###Initialize the mobile robot control inputs
+        self.mobrob_vx,self.mobrob_vy,self.mobrob_omega = 0,0,0,0
 
+        ###State transition matrix
+        self.A = np.eye(6)      
+
+        ###state to measurement matrix of the camera
         self.H_cam = np.array([
             [1.0,0.0,0.0,0.0,0.0,0.0],
             [0.0,1.0,0.0,0.0,0.0,0.0],
             [0.0,0.0,1.0,0.0,0.0,0.0],
-        ])  #state to measurement matrix  
+        ])   
+
+        ###state to measurement matrix of the IMU
+        self.H_imu = np.array([
+            [0,0,0,1,0,0],
+            [0,0,0,0,1,0],
+            [0,0,0,0,0,1],
+        ])
         
         #x,y,z,roll(phi), pitch(theta), yaw(psi)
-        self.x_hat_k_1 = np.array([[0.074,0.544,8.8,0,0,0]]).T #initial state 
+        #initial state of the drone
+        self.x_hat_k_1 = np.array([[0.074,0.544,8.8,0,0,0]]).T 
              
-
-
         self.P_k_1 = np.eye(6)     #initialize covariance matrix
         self.Q = 0.02*np.eye(6)  #process noise covariance 
         
-        self.R_cam = 0.4*np.eye(3)  #measurement noise covariance
-        self.R_imu = 0.4*np.eye(3)  #measurement noise covariance
+        self.R_cam = 0.4*np.eye(3)  #measurement noise covariance of camera
+        self.R_imu = 0.4*np.eye(3)  #measurement noise covariance of imu
 
         self.r2d = 180/np.pi
-
 
         self.dt = 1/20
         
@@ -116,14 +129,9 @@ class DroneEKF(Node):
         self.drone_yaw = 0.0
 
         self.angles = (0,0,0)
-
    
 
-        self.H_imu = np.array([
-            [0,0,0,1,0,0],
-            [0,0,0,0,1,0],
-            [0,0,0,0,0,1],
-        ])
+
 
         self.t_now = time.time()
 
@@ -172,7 +180,7 @@ class DroneEKF(Node):
 
         
         self.t_now = time.time()
-        u_k_1 = np.array([[self.drone_vx,self.drone_vy,self.drone_vz,self.drone_omega]]).T
+        u_k_drone = np.array([[self.drone_vx,self.drone_vy,self.drone_vz,self.drone_omega]]).T
         R_u_fix = np.array([
             [0.0,1.0,0.0,0.0],
             [0.0,0.0,1.0,0.0],
@@ -180,7 +188,7 @@ class DroneEKF(Node):
             [0.0,0.0,0.0,1.0],
             ])
         #the contol inputs are rotated 
-        u_k_1 = R_u_fix@u_k_1 #== np.array([[self.drone_vy,self.drone_vz,-self.drone_vx,self.drone_omega]]).T
+        u_k_drone = R_u_fix@u_k_drone #== np.array([[self.drone_vy,self.drone_vz,-self.drone_vx,self.drone_omega]]).T
         psi = self.x_hat_k_1[5][0]
         phi = self.x_hat_k_1[3][0]
         theta = self.x_hat_k_1[4][0]
@@ -203,10 +211,16 @@ class DroneEKF(Node):
             [ np.sin(theta),         0,  np.cos(theta)],
             [-np.cos(theta),         0,  np.sin(theta)],
             ])
-
-        rot = yaw @ roll @ pitch #pitch @ roll @ yaw#
         
-        print(rot)
+        yaw_car = np.array([      #input matrix
+            [-np.sin(psi_car), np.cos(psi_car), 0],
+            [               0,               0, 1],
+            [-np.cos(psi_car), np.sin(psi_car), 0],
+            ])
+
+        rot_drone = yaw @ roll @ pitch #pitch @ roll @ yaw#
+        
+
        # self.H_cam[:3, :3] = rot.T    #inverse/transpose of rotation matrix
         
         # B = np.array([
@@ -217,7 +231,7 @@ class DroneEKF(Node):
         #     [0                           ,0                         ,0                        ,      0],
         #     [0                           ,0                         ,0                        ,      1],
         #     ])
-        B = np.array([
+        B_drone = np.array([
             [1.,1.,1.,0.],
             [1.,1.,1.,0.],
             [1.,1.,1.,0.],
@@ -225,14 +239,14 @@ class DroneEKF(Node):
             [0.,0.,0.,0.],
             [0.,0.,0.,1.],
             ])
-        B[0:3, 0:3] = rot#np.linalg.inv(rot)
-        B = self.dt*B
+        B_drone[0:3, 0:3] = rot_drone#np.linalg.inv(rot)
+        B_drone = self.dt*B_drone
         #print(x_hat_k)
 
         #print(B)
         #print(B)
         #print(1/self.dt)
-        x_hat_k = self.A@self.x_hat_k_1 +  B@u_k_1
+        x_hat_k = self.A@self.x_hat_k_1 +  B_drone@u_k_drone + B_car@u_k_car
         #print(x_hat_k)
 
         P_k = self.A@self.P_k_1@self.A.T +self.Q
@@ -243,10 +257,8 @@ class DroneEKF(Node):
 
 
         if not (self.tx == 0.0 and self.ty == 0.0 and self.tz == 0.0):
-            z_k_1_cam = np.array([[-self.tx, -self.ty, self.tz]]).T
-            print("a",z_k_1_cam)
+            z_k_1_cam = np.array([[self.tx, self.ty, self.tz]]).T
             z_k_1_cam = rot@z_k_1_cam
-            print("b",z_k_1_cam)
             #print("meas",x_hat_k, "obs",self.H_cam@x_hat_k)
             x_k_new = x_hat_k + K1@(z_k_1_cam - self.H_cam@x_hat_k)
             #print("x1:",x_k_new[3][0], x_k_new[4][0], x_k_new[5][0])
@@ -272,10 +284,9 @@ class DroneEKF(Node):
         #print(x_k_new)
         #print("x_k_new:",np.shape(x_k_new),"B:",np.shape(B),"u_k_1:",np.shape(u_k_1),"z_k_1_cam:",np.shape(z_k_1_imu))
         #change to tuple
-        #self.quat_new = euler2quat(x_k_new[4][0], x_k_new[5][0], x_k_new[3][0])
+        self.quat_new = euler2quat(x_k_new[4][0], x_k_new[5][0], x_k_new[3][0])
         quat2 = np.array([0.0,0.0,1.0,0.0])
         quat3 = self.quaternion_multiply(self.quat_new,quat2)
-        #quat3 = self.quaternion_multiply(self.quat_new,quat2)
         #self.quat_new = euler2quat(self.drone_pitch,self.drone_yaw,self.drone_roll)
         #quat = euler2quat(x_k_new[3][0]*self.r2d, x_k_new[4][0]*self.r2d, x_k_new[5][0]*self.r2d)
         ############################################
@@ -368,7 +379,7 @@ class DroneEKF(Node):
         #print(self.drone_roll,self.drone_pitch, self.drone_yaw )
         self.quat_new = euler2quat(self.drone_pitch,self.drone_yaw,self.drone_roll)
     
-    def vel_subscriber(self,msg):
+    def drone_vel_subscriber(self,msg):
         """This callback function gets the velocity data of the drone"""
         self.dt = 1/20#self.t_now - self.t_old
         self.drone_vx = msg.linear.x
@@ -376,6 +387,12 @@ class DroneEKF(Node):
         self.drone_vz = msg.linear.z
         self.drone_omega = msg.angular.z
         self.t_old = self.t_now
+    
+    def mobrob_vel_subscriber(self,msg):
+        self.dt = 1/20#self.t_now - self.t_old
+        self.mobrob_vx = msg.linear.x
+        self.mobrob_vy = msg.linear.y
+        self.mobrob_omega = msg.angular.z
 
 def main(args=None):
    
