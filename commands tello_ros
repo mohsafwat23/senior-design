@@ -1,0 +1,12 @@
+ros2 run tello_driver tello_keyboard.py --ros-args -r /drone1/cmd_vel:=/cmd_vel -r /drone1/tello_action:=/tello_action
+ros2 service call /reset_simulation std_srvs/Empty.
+ros2 run tello_driver tello_keyboard.py --ros-args -r /cmd_vel:=/drone1/cmd_vel -r /tello_action:=/drone1/tello_action
+
+imu is in radians
+rosrun rosserial_python serial_node.py /dev/ttyACM0
+
+
+
+colcon build --symlink-install --packages-skip ros1_bridge
+ros2 run ros1_bridge dynamic_bridge --bridge-all-topics
+
